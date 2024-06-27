@@ -163,6 +163,125 @@ WHERE id IN (14887, 16371)
 | 14887 | I heard a gunshot and then saw a man run out. He had a "Get Fit Now Gym" bag. The membership number on the bag started with "48Z". Only gold members have those bags. The man got into a car with a plate that included "H42W". | 14887 | Morty Schapiro | 118009 | 4919 |	Northwestern Dr | 111564949 |
 | 16371 | I saw the murder happen, and I recognized the killer from my gym when I was working out last week on January the 9th. | 16371 | Annabel Miller | 490173 | 103 | Franklin Ave | 318771143 |
 
+## 4. ANALIZANDO LAS PISTAS
+De acuerdo con las entrevistas a los testigos el asesino es un hombre que asiste al gimnasio. Llevaba una bolsa con número de membresía __gold que comenzaba con "48Z" y placa del auto "H42W"__. El sospechoso asistió al gimnasio el __09 de enero.__
+
+```python
+%%sql
+SELECT X.id, X.person_id, X.name, X.membership_status
+FROM get_fit_now_member X
+JOIN get_fit_now_check_in Y ON X.id = Y.membership_id
+WHERE X.membership_status='gold' AND X.id LIKE '48Z%' AND Y.check_in_date= 20180109
+```
+| id |	person_id |	name |	membership_status |
+|-----|----------|-------------|-----------|
+| 48Z7A | 28819 | Joe Germuska | gold |
+| 48Z55 | 67318 | Jeremy Bowers | gold |
+
+```python
+%%sql
+SELECT X.name, X.id, X.license_id, Y.plate_number
+FROM person X
+JOIN drivers_license Y ON X.license_id=Y.id
+WHERE plate_number LIKE 'H42W%'
+```
+| name | id | license_id | plate_number |
+|------|----|---------|---------|
+| Maxine Whitely | 78193 | 183779 | H42W0X |
+
+__El sospechoso huyó en el carro de Maxine Whitely.__
+
+## 5. BUSCANDO INFORMACIÓN DE LOS SOSPECHOSOS
+De acuerdo a las consultas hay dos sospechosos que cumplen con las pistas brindadas por los testigos, ellos son __Joe Germuska con el person_id= 28819 y Jeremy Bowers con el person_id= 67318.__ El sospechoso se subió al auto de __Maxine Whitely con el person_id= 78193__ para huir de la escena del crimen.
+
+Se requiere revisar las entrevistas de estos tres sospechoso del crimen.
+
+```python
+%%sql
+SELECT id, name, transcript FROM
+interview JOIN person
+ON person_id=id
+WHERE person_id IN (28819, 67318, 78193)
+```
+| id | name | transcript |
+|-----|---------|----------|
+| 67318 | Jeremy Bowers | I was hired by a woman with a lot of money. I don't know her name but I know she's around 5'5" (65") or 5'7" (67"). She has red hair and she drives a Tesla Model S. I know that she attended the SQL Symphony Concert 3 times in December 2017.|
+
+```python
+check_suspect("Jeremy Bowers")
+
+Congrats, you found the murderer! But wait, there's more...
+If you think you're up for a challenge,try querying the interview transcript of the murderer to find the real villain behind this crime.
+If you feel especially confident in your SQL skills, try to complete this final step with no more than 2 queries.
+Use this same `check_suspect` function with your new suspect to check your answer.
+True
+```
+
+## 6. ENCONTRANDO A LA AUTORA INTELECTUAL DEL CRIMEN
+Con base a la entrevista realizada a __JEREMY BOWERS__ se conoce que es el asesino a sueldo. Pero existe una autora intelectual del crimen y debemos encontrarla finalmente resolver el caso y darlo por terminado.
+
+La sospechaso es una mujer que mide alrededor 5'5" (65") o 5'7" (67"), tiene cabello rojo y conduce un auto Tesla Modelo S.
+
+```python
+%%sql
+SELECT *
+FROM drivers_license
+WHERE gender='female' AND hair_color='red' AND car_make='Tesla' AND car_model='Model S'
+```
+| id | age | height | eye_color | hair_color | gender | plate_number | car_make	| car_model |
+|------|-----|-----|-------|------|-------|-------|--------|-------|
+| 202298 | 68 |	66 | green | red | female | 500123 | Tesla | Model S |
+| 291182 | 65 |	66 | blue | red | female | 08CM64 | Tesla | Model S |
+| 918773 | 48 |	65 | black | red | female | 917UU3 | Tesla | Model S |
+
+```python
+%%sql
+SELECT *
+FROM person X
+JOIN drivers_license Y ON X.license_id=Y.id
+WHERE Y.id IN (202298, 291182, 918773)
+```
+
+| id | name | license_id | address_number | address_street_name | ssn | 	id_1 |	age |	height | eye_color | hair_color | gender | plate_number	| car_make | car_model |
+|-------|-----|-----|------|-----|-----|----|-------|------|------|-----|-----|----|-----|-----|
+| 78881 | Red Korb | 918773 | 107 | Camerata Dr | 961388910 | 918773 |	48 |	65 |	black |	red |	female | 917UU3 | Tesla | Model S |
+| 90700 | Regina George| 291182 | 332 |	Maple Ave | 337169072 |	291182 |	65 |	66 |	blue |	red |	female | 08CM64	| Tesla	| Model S |
+| 99716 | Miranda Priestly | 202298 | 1883 | Golden Ave | 987756388 | 202298 |	68 | 66 | green | red |	female | 500123 | Tesla | Model S |
+
+```python
+%%sql
+SELECT * FROM
+facebook_event_checkin
+WHERE person_id IN (78881, 90700, 99716)
+```
+| person_id | event_id | event_name | date |
+|----------|--------|--------|------|
+| 99716 | 1143 | SQL Symphony Concert |	20171206 |
+| 99716 | 1143 | SQL Symphony Concert |	20171212 |
+| 99716 | 1143 | SQL Symphony Concert |	20171229 |
+
+```python
+%%sql
+SELECT X.id, X.name, Y.ssn, Y.annual_income
+FROM person X
+JOIN income Y ON X.ssn=Y.ssn
+WHERE X.ssn= 987756388
+```
+
+| id |	name |	ssn |	annual_income |
+|------|------|------|-------|
+| 99716 | Miranda Priestly |	987756388 |	310000 |
+
+```python
+check_suspect("Miranda Priestly")
+Congrats, you found the brains behind the murder!
+Everyone in SQL City hails you as the greatest SQL detective of all time.
+Time to break out the champagne!
+True
+```
+
+### CASO RESUELTO
+__Miranda Priestly es la autora intelectual del asesinato__. Es una mujer millonaria, que tiene cabello rojo, posee un auto marca Tesla Model S. Además que según registros en la tabla facebook_event_checkin asistió al evento SQL Symphony Concert tres veces en diciembre del 2017. Cumple con todas las características descrita por el asesino a sueldo Jeremy Bowers.
 
 
 
