@@ -183,11 +183,16 @@ WHERE X.membership_status='gold' AND X.id LIKE '48Z%' AND Y.check_in_date= 20180
 SELECT X.name, X.id, X.license_id, Y.plate_number
 FROM person X
 JOIN drivers_license Y ON X.license_id=Y.id
-WHERE plate_number LIKE 'H42W%'
+WHERE plate_number LIKE '%H42W%'
 ```
 | name | id | license_id | plate_number |
 |------|----|---------|---------|
+| Tushar Chandra | 51739 | 664760 | 4H42WR |
+|Jeremy Bowers | 67318 | 423327 | 0H42W2 |
 | Maxine Whitely | 78193 | 183779 | H42W0X |
+
+Jeremy Bowers	67318	423327	0H42W2
+
 
 __El sospechoso huyó en el carro de Maxine Whitely.__
 
